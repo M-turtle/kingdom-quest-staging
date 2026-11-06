@@ -15,6 +15,10 @@
 .choice .clock{width:min(24vw,120px)}
 .choices.clocks{grid-template-columns:repeat(auto-fit, minmax(140px, 1fr))}
 .tile .m{width:100%; display:grid; gap:3px} .tile .m small{font-size:11px; color:var(--muted); font-weight:700}
+.inside-open{display:flex; width:100%; align-items:center; justify-content:center; gap:10px; min-height:58px; margin:0 0 14px; padding:10px 16px; border-radius:var(--radius); border:2px solid var(--accent-2); background:var(--accent); color:#fff; font:800 18px var(--font-body); cursor:pointer}
+.inside-layer{position:fixed; inset:0; z-index:9999; background:var(--bg)}
+.inside-layer iframe{position:absolute; inset:0; width:100%; height:100%; border:0; display:block}
+.inside-close{position:absolute; top:calc(10px + env(safe-area-inset-top)); inset-inline-start:10px; z-index:1; min-height:48px; padding:0 16px; border-radius:14px; border:2px solid #a37f1f; background:#f9f1df!important; color:#2b1c10!important; font:800 16px var(--font-body); cursor:pointer}
 </style>
 <link rel="stylesheet" href="../shared/skin.css?v=6">
 </head>
@@ -98,5 +102,35 @@
 <script src="../shared/fx3d.js?v=9"></script>
 <script src="../shared/rooms3d.js?v=51"></script>
 <script>window.Room3D && Room3D.stage('clockwork');</script>
+<script>
+/* Inside the clock: a 3D take-apart of the tower's own clock, opened from the world's first screen. The page is
+   clock/inside.html, built from clock/inside-src. It runs sandboxed, with no access to the player's data. */
+(function () {
+  'use strict';
+  KQ.i18n.extend({
+    en: { inside_open: 'See inside the clock', inside_close: 'Close' },
+    he: { inside_open: 'מה יש בתוך השעון?', inside_close: 'סגירה' }
+  });
+  function open() {
+    const opener = document.activeElement, layer = document.createElement('div'), frame = document.createElement('iframe'), close = document.createElement('button');
+    const theme = document.documentElement.dataset.theme;
+    layer.className = 'inside-layer'; layer.setAttribute('role', 'dialog'); layer.setAttribute('aria-modal', 'true'); layer.setAttribute('aria-label', KQ.t('inside_open'));
+    frame.setAttribute('sandbox', 'allow-scripts'); frame.title = KQ.t('inside_open');
+    frame.src = 'inside.html?lang=' + encodeURIComponent(KQ.i18n.lang) + (theme ? '&theme=' + encodeURIComponent(theme) : '');
+    close.type = 'button'; close.className = 'inside-close'; close.textContent = KQ.t('inside_close');
+    const shut = () => { removeEventListener('keydown', onKey); layer.remove(); document.body.style.overflow = ''; if (opener && opener.focus) opener.focus(); };
+    const onKey = e => { if (e.key === 'Escape') shut(); };
+    close.onclick = shut; addEventListener('keydown', onKey);
+    layer.append(frame, close); document.body.appendChild(layer); document.body.style.overflow = 'hidden'; close.focus();
+  }
+  function add() {
+    const pick = document.getElementById('pick'); if (!pick) return;
+    let b = pick.querySelector('.inside-open');
+    if (!b) { b = document.createElement('button'); b.type = 'button'; b.className = 'inside-open'; b.onclick = open; pick.prepend(b); }
+    b.textContent = KQ.t('inside_open');
+  }
+  add(); document.addEventListener('kq:lang', add);
+})();
+</script>
 </body>
 </html>
